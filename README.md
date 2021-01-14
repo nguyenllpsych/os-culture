@@ -1,2 +1,1 @@
-# os-culture
-Open science practices in cultural psychology
+# Open science practices in ethnic minority and cultural psychology
