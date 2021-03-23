@@ -5,7 +5,7 @@
 ## Linh Nguyen - nguy4006@umn.edu                           ##
 ##                                                          ##
 ## Created: 13-Jan-2021                                     ##
-## Updated: 14-Jan-2021                                     ##
+## Updated: 23-Mar-2021                                     ##
 ## To navigate: Edit - Folder - Collapse All                ##
 ##############################################################
 
@@ -40,7 +40,8 @@ data <- read_csv("./Raw data/Raw data.csv",
                                   rep_2 = col_character(), 
                                   lead = col_character()))
 
-data <- data[, c(-1:-10)] #delete unnecessary Qualtrics data
+data <- subset(data, select = -c(ID, Status, RecordedDate, ResponseId, 
+                  DistributionChannel, UserLanguage)) #delete unnecessary Qualtrics data
 data$id <- 1:nrow(data)
 
 # CLEANING =================================================
