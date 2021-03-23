@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE, results = "asis")
 options(digits = 2)
 ```
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, results = "hold"}
 require(tidyverse)
 require(rio)
 require(summarytools)
@@ -80,17 +80,27 @@ likert4 <- dict %>%
   filter(value_label == "0 = No, 1 = Yes, 2 = I have not published an empirical paper") %>%
   pull(variable)
 factor4 <- function(x){
-  factor(x, levels = c(0:2), 
-         labels = c("No", "Yes", "I have not published an empirical paper"))
+  factor(x, levels = c(0:1), 
+         labels = c("No", "Yes"))
+}
+
+likert5 <- dict %>% 
+  filter(value_label == "0 = No, 1 = Yes") %>%
+  pull(variable)
+factor5 <- function(x){
+  factor(x, levels = c(0:1), 
+         labels = c("No", "Yes"))
 }
 
 data <- data %>% 
   mutate_at(likert1, factor1) %>% 
   mutate_at(likert2, factor2) %>% 
   mutate_at(likert3, factor3) %>% 
-  mutate_at(likert4, factor4)
+  mutate_at(likert4, factor4) %>% 
+  mutate_at(likert5, factor5)
 
-rm(likert1, likert2, likert3, likert4, factor1, factor2, factor3, factor4)
+rm(likert1, likert2, likert3, likert4, likert5, 
+   factor1, factor2, factor3, factor4, factor5)
 
 #list of ID with complete responses
 full <- data %>% 
@@ -119,6 +129,7 @@ freq(data$gender_f)
 freq(data$race_f)
 freq(data$continent)
 freq(data$career)
+freq(data$culture)
 descr <- data %>% select(politics, c19stress, agree, consci, extra, neuro, open)
 descr(descr, stats = "common", order = "p")
 rm(descr)
@@ -141,9 +152,11 @@ data %>% filter(id %in% full) %>%
 
 # IV. Exploratory analyses
 
-### 1. Questionable research practices
+## 1. Questionable research practices
 
-#### Self - Have you engaged in these practices?
+### 1a. Self
+ 
+Have you engaged in these practices?
 
 ```{r, results="hold"}
 qrpself <- data.frame(var = dict %>% filter(scale == "Self QRP") %>% pull(variable),
@@ -153,7 +166,7 @@ colnames(likert) <- qrpself$labels
 likert(likert)
 ```
 
-- Grouped by gender
+#### Grouped by gender
 
 ```{r}
 likert$gender_f <- data$gender_f
@@ -162,8 +175,62 @@ plot(likert(likertf[,1:5], grouping = likertf$gender_f))
 plot(likert(likertf[,6:10], grouping = likertf$gender_f))
 ```
 
+#### Grouped by age
 
-#### Other - Percentage of researchers in ethnic minority/cultural psychology who you believe have engaged in these practices?
+```{r}
+likert$age <- data$age
+likerta <- likert %>% filter(is.na(age) == F)
+plot(likert(likerta[,1:2], grouping = likerta$age))
+plot(likert(likerta[,3:4], grouping = likerta$age))
+plot(likert(likerta[,5:6], grouping = likerta$age))
+plot(likert(likerta[,7:8], grouping = likerta$age))
+plot(likert(likerta[,9:10], grouping = likerta$age))
+```
+
+#### Grouped by career stage
+
+```{r}
+likert$career <- data$career
+likertc <- likert %>% filter(is.na(career) == F)
+plot(likert(likertc[,1:2], grouping = likertc$career))
+plot(likert(likertc[,3:4], grouping = likertc$career))
+plot(likert(likertc[,5:6], grouping = likertc$career))
+plot(likert(likertc[,7:8], grouping = likertc$career))
+plot(likert(likertc[,9:10], grouping = likertc$career))
+```
+
+#### Grouped by leadership position
+
+```{r}
+likert$lead_1 <- factor(data$lead_1, levels = c(0,1), labels = c("Not leader at own institution", "Leader at own institution"))
+likertl1 <- likert %>% filter(is.na(lead_1) == F)
+plot(likert(likertl1[,1:5], grouping = likertl1$lead_1))
+plot(likert(likertl1[,6:10], grouping = likertl1$lead_1))
+
+likert$lead_2 <- factor(data$lead_2, levels = c(0,1), labels = c("Not leader at journal editorialship", "Leader at journal editorialship"))
+likertl2 <- likert %>% filter(is.na(lead_2) == F)
+plot(likert(likertl2[,1:5], grouping = likertl2$lead_2))
+plot(likert(likertl2[,6:10], grouping = likertl2$lead_2))
+
+likert$lead_3 <- factor(data$lead_3, levels = c(0,1), labels = c("Not leader at professional societies", "Leader at professional societies"))
+likertl3 <- likert %>% filter(is.na(lead_3) == F)
+plot(likert(likertl3[,1:5], grouping = likertl3$lead_3))
+plot(likert(likertl3[,6:10], grouping = likertl3$lead_3))
+```
+
+#### Grouped by identification with subfield of cultural/ethnic minority psychology
+
+```{r}
+likert$culture <- data$culture
+likertce <- likert %>% filter(is.na(culture) == F)
+plot(likert(likertce[,1:5], grouping = likertce$culture))
+plot(likert(likertce[,6:10], grouping = likertce$culture))
+```
+
+
+### 1b. Other
+
+Percentage of researchers in ethnic minority/cultural psychology who you believe have engaged in these practices?
 
 ```{r}
 qrppeer <- data.frame(var = dict %>% filter(scale == "Peer QRP") %>% pull(variable),
@@ -173,40 +240,206 @@ colnames(descr) <- qrppeer$labels
 descr(descr, stats = "common", order = "p")
 ```
 
-#### Opinion - What is your opinion of these practices?
+### 1c. Opinion
+
+What is your opinion of these practices?
 
 ```{r}
 qrpopi <- data.frame(var = dict %>% filter(scale == "Opinion QRP") %>% pull(variable),
                       labels = dict %>% filter(scale == "Opinion QRP") %>% pull(label))
 likert <- data %>% select(all_of(qrpopi$var))
 colnames(likert) <- qrpopi$labels
-likert(likert) %>% xtable() %>% print(type = "html")
+likert(likert)
 ```
 
+#### Grouped by gender
 
-### 2. Proposed Reforms to Research Practices
+```{r}
+likert$gender_f <- data$gender_f
+likertf <- likert %>% filter(is.na(gender_f) == F)
+plot(likert(likertf[,1:5], grouping = likertf$gender_f))
+plot(likert(likertf[,6:10], grouping = likertf$gender_f))
+```
 
-#### Awareness - Have you ever heard of these practices?
+#### Grouped by age
+
+```{r}
+likert$age <- data$age
+likerta <- likert %>% filter(is.na(age) == F)
+plot(likert(likerta[,1:2], grouping = likerta$age))
+plot(likert(likerta[,3:4], grouping = likerta$age))
+plot(likert(likerta[,5:6], grouping = likerta$age))
+plot(likert(likerta[,7:8], grouping = likerta$age))
+plot(likert(likerta[,9:10], grouping = likerta$age))
+```
+
+#### Grouped by career stage
+
+```{r}
+likert$career <- data$career
+likertc <- likert %>% filter(is.na(career) == F)
+plot(likert(likertc[,1:2], grouping = likertc$career))
+plot(likert(likertc[,3:4], grouping = likertc$career))
+plot(likert(likertc[,5:6], grouping = likertc$career))
+plot(likert(likertc[,7:8], grouping = likertc$career))
+plot(likert(likertc[,9:10], grouping = likertc$career))
+```
+
+#### Grouped by leadership position
+
+```{r}
+likert$lead_1 <- factor(data$lead_1, levels = c(0,1), labels = c("Not leader at own institution", "Leader at own institution"))
+likertl1 <- likert %>% filter(is.na(lead_1) == F)
+plot(likert(likertl1[,1:5], grouping = likertl1$lead_1))
+plot(likert(likertl1[,6:10], grouping = likertl1$lead_1))
+
+likert$lead_2 <- factor(data$lead_2, levels = c(0,1), labels = c("Not leader at journal editorialship", "Leader at journal editorialship"))
+likertl2 <- likert %>% filter(is.na(lead_2) == F)
+plot(likert(likertl2[,1:5], grouping = likertl2$lead_2))
+plot(likert(likertl2[,6:10], grouping = likertl2$lead_2))
+
+likert$lead_3 <- factor(data$lead_3, levels = c(0,1), labels = c("Not leader at professional societies", "Leader at professional societies"))
+likertl3 <- likert %>% filter(is.na(lead_3) == F)
+plot(likert(likertl3[,1:5], grouping = likertl3$lead_3))
+plot(likert(likertl3[,6:10], grouping = likertl3$lead_3))
+```
+
+#### Group by identification with subfield of cultural/ethnic minority psychology
+
+```{r}
+likert$culture <- data$culture
+likertce <- likert %>% filter(is.na(culture) == F)
+plot(likert(likertce[,1:5], grouping = likertce$culture))
+plot(likert(likertce[,6:10], grouping = likertce$culture))
+```
+
+## 2. Proposed Reforms to research practices
+
+### 2a. Awareness
+
+Have you ever heard of these practices?
 
 ```{r}
 prrpaware <- data.frame(var = dict %>% filter(scale == "Aware PRRP") %>% pull(variable),
                         labels = dict %>% filter(scale == "Aware PRRP") %>% pull(label))
-descr <- data %>% select(all_of(prrpaware$var))
-colnames(descr) <- prrpaware$labels
-descr(descr, stats = "common", order = "p")
+likert <- data %>% select(all_of(prrpaware$var))
+colnames(likert) <- prrpaware$labels
+likert(likert)
 ```
 
-#### Self - Have you engaged in these practices?
+#### Grouped by gender
+
+```{r}
+likert$gender_f <- data$gender_f
+likertf <- likert %>% filter(is.na(gender_f) == F)
+plot(likert(likertf[,1:3], grouping = likertf$gender_f))
+```
+
+#### Grouped by age
+
+```{r}
+likert$age <- data$age
+likerta <- likert %>% filter(is.na(age) == F)
+plot(likert(likerta[,1:3], grouping = likerta$age))
+```
+
+#### Grouped by career stage
+
+```{r}
+likert$career <- data$career
+likertc <- likert %>% filter(is.na(career) == F)
+plot(likert(likertc[,1:3], grouping = likertc$career))
+```
+
+#### Grouped by leadership position
+
+```{r}
+likert$lead_1 <- factor(data$lead_1, levels = c(0,1), labels = c("Not leader at own institution", "Leader at own institution"))
+likertl1 <- likert %>% filter(is.na(lead_1) == F)
+plot(likert(likertl1[,1:3], grouping = likertl1$lead_1))
+
+likert$lead_2 <- factor(data$lead_2, levels = c(0,1), labels = c("Not leader at journal editorialship", "Leader at journal editorialship"))
+likertl2 <- likert %>% filter(is.na(lead_2) == F)
+plot(likert(likertl2[,1:3], grouping = likertl2$lead_2))
+
+likert$lead_3 <- factor(data$lead_3, levels = c(0,1), labels = c("Not leader at professional societies", "Leader at professional societies"))
+likertl3 <- likert %>% filter(is.na(lead_3) == F)
+plot(likert(likertl3[,1:3], grouping = likertl3$lead_3))
+```
+
+#### Grouped by identification with subfield of cultural/ethnic minority psychology
+
+```{r}
+likert$culture <- data$culture
+likertce <- likert %>% filter(is.na(culture) == F)
+plot(likert(likertce[,1:3], grouping = likertce$culture))
+```
+
+
+### 2b. Self
+ 
+Have you engaged in these practices?
 
 ```{r}
 prrpself <- data.frame(var = dict %>% filter(scale == "Self PRRP") %>% pull(variable),
                       labels = dict %>% filter(scale == "Self PRRP") %>% pull(label))
 likert <- data %>% select(all_of(prrpself$var))
 colnames(likert) <- prrpself$labels
-likert(likert) %>% xtable() %>% print(type = "html")
+likert(likert)
 ```
 
-#### Peer - Percentage of researchers in ethnic minority/cultural psychology who you believe have engaged in these practices?
+#### Grouped by gender
+
+```{r}
+likert$gender_f <- data$gender_f
+likertf <- likert %>% filter(is.na(gender_f) == F)
+plot(likert(likertf[,1:3], grouping = likertf$gender_f))
+```
+
+#### Grouped by age
+
+```{r}
+likert$age <- data$age
+likerta <- likert %>% filter(is.na(age) == F)
+plot(likert(likerta[,1:3], grouping = likerta$age))
+```
+
+#### Grouped by career stage
+
+```{r}
+likert$career <- data$career
+likertc <- likert %>% filter(is.na(career) == F)
+plot(likert(likertc[,1:3], grouping = likertc$career))
+```
+
+#### Grouped by leadership position
+
+```{r}
+likert$lead_1 <- factor(data$lead_1, levels = c(0,1), labels = c("Not leader at own institution", "Leader at own institution"))
+likertl1 <- likert %>% filter(is.na(lead_1) == F)
+plot(likert(likertl1[,1:3], grouping = likertl1$lead_1))
+
+likert$lead_2 <- factor(data$lead_2, levels = c(0,1), labels = c("Not leader at journal editorialship", "Leader at journal editorialship"))
+likertl2 <- likert %>% filter(is.na(lead_2) == F)
+plot(likert(likertl2[,1:3], grouping = likertl2$lead_2))
+
+likert$lead_3 <- factor(data$lead_3, levels = c(0,1), labels = c("Not leader at professional societies", "Leader at professional societies"))
+likertl3 <- likert %>% filter(is.na(lead_3) == F)
+plot(likert(likertl3[,1:3], grouping = likertl3$lead_3))
+```
+
+#### Grouped by identification with subfield of cultural/ethnic minority psychology
+
+```{r}
+likert$culture <- data$culture
+likertce <- likert %>% filter(is.na(culture) == F)
+plot(likert(likertce[,1:3], grouping = likertce$culture))
+```
+
+
+### 2c. Peer
+
+Percentage of researchers in ethnic minority/cultural psychology who you believe have engaged in these practices?
 
 ```{r}
 prrppeer <- data.frame(var = dict %>% filter(scale == "Peer PRRP") %>% pull(variable),
@@ -216,31 +449,133 @@ colnames(descr) <- prrppeer$labels
 descr(descr, stats = "common", order = "p")
 ```
 
-#### Recent - Did you engage in these practices for your last empirical paper?
+### Recent - Did you engage in these practices for your last empirical paper?
 
 ```{r}
 prrprecent <- data.frame(var = dict %>% filter(scale == "Recent PRRP") %>% pull(variable),
                       labels = dict %>% filter(scale == "Recent PRRP") %>% pull(label))
 likert <- data %>% select(all_of(prrprecent$var))
 colnames(likert) <- prrprecent$labels
-likert(likert) %>% xtable() %>% print(type = "html")
+likert(likert)
 ```
 
-#### Opinion - What is your opinion of these practices?
+#### Grouped by gender
+
+```{r}
+likert$gender_f <- data$gender_f
+likertf <- likert %>% filter(is.na(gender_f) == F)
+plot(likert(likertf[,1:3], grouping = likertf$gender_f))
+```
+
+#### Grouped by age
+
+```{r}
+likert$age <- data$age
+likerta <- likert %>% filter(is.na(age) == F)
+plot(likert(likerta[,1:3], grouping = likerta$age))
+```
+
+#### Grouped by career stage
+
+```{r}
+likert$career <- data$career
+likertc <- likert %>% filter(is.na(career) == F)
+plot(likert(likertc[,1:3], grouping = likertc$career))
+```
+
+#### Grouped by leadership position
+
+```{r}
+likert$lead_1 <- factor(data$lead_1, levels = c(0,1), labels = c("Not leader at own institution", "Leader at own institution"))
+likertl1 <- likert %>% filter(is.na(lead_1) == F)
+plot(likert(likertl1[,1:3], grouping = likertl1$lead_1))
+
+likert$lead_2 <- factor(data$lead_2, levels = c(0,1), labels = c("Not leader at journal editorialship", "Leader at journal editorialship"))
+likertl2 <- likert %>% filter(is.na(lead_2) == F)
+plot(likert(likertl2[,1:3], grouping = likertl2$lead_2))
+
+likert$lead_3 <- factor(data$lead_3, levels = c(0,1), labels = c("Not leader at professional societies", "Leader at professional societies"))
+likertl3 <- likert %>% filter(is.na(lead_3) == F)
+plot(likert(likertl3[,1:3], grouping = likertl3$lead_3))
+```
+
+#### Group by identification with subfield of cultural/ethnic minority psychology
+
+```{r}
+likert$culture <- data$culture
+likertce <- likert %>% filter(is.na(culture) == F)
+plot(likert(likertce[,1:3], grouping = likertce$culture))
+```
+
+
+### 2d. Opinion
+
+What is your opinion of these practices?
 
 ```{r}
 prrpopi <- data.frame(var = dict %>% filter(scale == "Opinion PRRP") %>% pull(variable),
                       labels = dict %>% filter(scale == "Opinion PRRP") %>% pull(label))
 likert <- data %>% select(all_of(prrpopi$var))
 colnames(likert) <- prrpopi$labels
-likert(likert) %>% xtable() %>% print(type = "html")
+likert(likert)
 ```
 
-#### Reasons - For not posting data
+#### Grouped by gender
 
 ```{r}
-whyinstr <- grep("^prrp1_5_", names(data), value = T)[-1]
-descr <- data %>% filter (prrp1_4 == "No") %>% select(all_of(whyinstr))
+likert$gender_f <- data$gender_f
+likertf <- likert %>% filter(is.na(gender_f) == F)
+plot(likert(likertf[,1:3], grouping = likertf$gender_f))
+```
+
+#### Grouped by age
+
+```{r}
+likert$age <- data$age
+likerta <- likert %>% filter(is.na(age) == F)
+plot(likert(likerta[,1:3], grouping = likerta$age))
+```
+
+#### Grouped by career stage
+
+```{r}
+likert$career <- data$career
+likertc <- likert %>% filter(is.na(career) == F)
+plot(likert(likertc[,1:3], grouping = likertc$career))
+```
+
+#### Grouped by leadership position
+
+```{r}
+likert$lead_1 <- factor(data$lead_1, levels = c(0,1), labels = c("Not leader at own institution", "Leader at own institution"))
+likertl1 <- likert %>% filter(is.na(lead_1) == F)
+plot(likert(likertl1[,1:3], grouping = likertl1$lead_1))
+
+likert$lead_2 <- factor(data$lead_2, levels = c(0,1), labels = c("Not leader at journal editorialship", "Leader at journal editorialship"))
+likertl2 <- likert %>% filter(is.na(lead_2) == F)
+plot(likert(likertl2[,1:3], grouping = likertl2$lead_2))
+
+likert$lead_3 <- factor(data$lead_3, levels = c(0,1), labels = c("Not leader at professional societies", "Leader at professional societies"))
+likertl3 <- likert %>% filter(is.na(lead_3) == F)
+plot(likert(likertl3[,1:3], grouping = likertl3$lead_3))
+```
+
+#### Group by identification with subfield of cultural/ethnic minority psychology
+
+```{r}
+likert$culture <- data$culture
+likertce <- likert %>% filter(is.na(culture) == F)
+plot(likert(likertce[,1:3], grouping = likertce$culture))
+```
+
+
+### 2e. Reasons
+
+#### For not posting data
+
+```{r}
+whydata <- grep("^prrp1_5_", names(data), value = T)[-1]
+descr <- data %>% filter (prrp1_4 == "No") %>% select(all_of(whydata))
 colnames(descr) <-  c("Proprietary",
                       "Time-consuming",
                       "Scooping",
@@ -254,30 +589,34 @@ colnames(descr) <-  c("Proprietary",
 descr(descr, stats = "common", order = "p") %>% kable()
 ```
 
+#### For not posting instruments
 
+```{r}
+whyinstr <- grep("^prrp2_5_", names(data), value = T)[-1]
+descr <- data %>% filter (prrp2_4 == "No") %>% select(all_of(whyinstr))
+colnames(descr) <-  c("Proprietary",
+                      "Time-consuming",
+                      "Scooping",
+                      "Deidentification",
+                      "Field not in favor",
+                      "Already public",
+                      "Unfamiliar",
+                      "Planning to",
+                      "Others")
+descr(descr, stats = "common", order = "p") %>% kable()
+```
 
- 
+### For not preregistering
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+whyprereg <- grep("^prrp3_5_", names(data), value = T)[-1]
+descr <- data %>% filter (prrp3_4 == "No") %>% select(all_of(whyprereg))
+colnames(descr) <-  c("Time-consuming",
+                      "Scooping",
+                      "Field not in favor",
+                      "Already public",
+                      "Unfamiliar",
+                      "Others")
+descr(descr, stats = "common", order = "p") %>% kable()
+```
 
