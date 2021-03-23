@@ -3,3 +3,5 @@
 Authors: Phuong Linh L. Nguyen and Moin Syed
 
 Codebook: https://rpubs.com/nguyenllpsych/os-culture
+
+Quantitative results: https://rpubs.com/nguyenllpsych/os-culture-results
