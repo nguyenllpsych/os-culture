@@ -42,6 +42,8 @@ data <- read_csv("./Raw data/Raw data.csv",
 
 data <- subset(data, select = -c(ID, Status, RecordedDate, ResponseId, 
                   DistributionChannel, UserLanguage)) #delete unnecessary Qualtrics data
+data <- data %>% 
+  rename(Duration = 'Duration (in seconds)')
 data$id <- 1:nrow(data)
 
 # CLEANING =================================================
@@ -405,6 +407,10 @@ data <- data %>%
     lead_3 = ifelse(
       str_detect(data$lead, fixed(",3")), #detect when 3 is included
       1,0))
+data <- data %>% 
+  mutate(lead_1 = ifelse(is.na(data$lead), NA, lead_1),
+         lead_2 = ifelse(is.na(data$lead), NA, lead_2),
+         lead_3 = ifelse(is.na(data$lead), NA, lead_3))
 
 var_label(data$lead_1) <- "Leadership position - Your institution"
 var_label(data$lead_2) <- "Leadership position - Journal editorialship"
@@ -881,3 +887,4 @@ var_label(data$lead) <- "3 Leadership positions in the past 5 years"
 
 # EXPORT =====================================================
 export(data, "cleaned.csv")
+export(data, "cleaned.sav")
