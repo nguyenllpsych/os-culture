@@ -273,6 +273,18 @@ data <- data %>%
       str_detect(data$prrp1_5, fixed(",10,")), #detect when 10 is included
       1,0))
 
+data <- data %>% 
+  mutate(prrp1_5_1 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_1),
+         prrp1_5_2 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_2),
+         prrp1_5_3 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_3),
+         prrp1_5_4 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_4),
+         prrp1_5_5 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_5),
+         prrp1_5_6 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_6),
+         prrp1_5_7 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_7),
+         prrp1_5_8 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_8),
+         prrp1_5_9 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_9),
+         prrp1_5_10 = ifelse(is.na(data$prrp1_5), NA, prrp1_5_10))
+
 var_label(data$prrp1_5_1) <- "Posting data - The data were propritary or access was restricted"
 var_label(data$prrp1_5_2) <- "Posting data - It was too time-consuming"
 var_label(data$prrp1_5_3) <- "Posting data - I didn't want to be scooped"
@@ -315,6 +327,17 @@ data <- data %>%
       str_detect(data$prrp2_5, fixed(",9,")), #detect when 9 is included
       1,0))
 
+data <- data %>% 
+  mutate(prrp2_5_1 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_1),
+         prrp2_5_2 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_2),
+         prrp2_5_3 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_3),
+         prrp2_5_4 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_4),
+         prrp2_5_5 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_5),
+         prrp2_5_6 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_6),
+         prrp2_5_7 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_7),
+         prrp2_5_8 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_8),
+         prrp2_5_9 = ifelse(is.na(data$prrp2_5), NA, prrp2_5_9))
+
 var_label(data$prrp2_5_1) <- "Posting instruments - The materials were proprietary or access was restricted"
 var_label(data$prrp2_5_2) <- "Posting instruments - It was too time-consuming"
 var_label(data$prrp2_5_3) <- "Posting instruments - I didn't want to be scooped"
@@ -346,6 +369,14 @@ data <- data %>%
     prrp3_5_6 = ifelse(
       str_detect(data$prrp3_5, fixed(",6,")), #detect when 6 is included
       1,0))
+
+data <- data %>% 
+  mutate(prrp3_5_1 = ifelse(is.na(data$prrp3_5), NA, prrp3_5_1),
+         prrp3_5_2 = ifelse(is.na(data$prrp3_5), NA, prrp3_5_2),
+         prrp3_5_3 = ifelse(is.na(data$prrp3_5), NA, prrp3_5_3),
+         prrp3_5_4 = ifelse(is.na(data$prrp3_5), NA, prrp3_5_4),
+         prrp3_5_5 = ifelse(is.na(data$prrp3_5), NA, prrp3_5_5),
+         prrp3_5_6 = ifelse(is.na(data$prrp3_5), NA, prrp3_5_6))
 
 var_label(data$prrp3_5_1) <- "Preregistration - It was too time-consuming"
 var_label(data$prrp3_5_2) <- "Preregistration - I didn't want to be scooped"
@@ -384,6 +415,17 @@ data <- data %>%
     rep_2_9 = ifelse(
       str_detect(data$rep_2, fixed(",9")), #detect when 9 is included
       1,0))
+
+data <- data %>% 
+  mutate(rep_2_1 = ifelse(is.na(data$rep_2), NA, rep_2_1),
+         rep_2_2 = ifelse(is.na(data$rep_2), NA, rep_2_2),
+         rep_2_3 = ifelse(is.na(data$rep_2), NA, rep_2_3),
+         rep_2_4 = ifelse(is.na(data$rep_2), NA, rep_2_4),
+         rep_2_5 = ifelse(is.na(data$rep_2), NA, rep_2_5),
+         rep_2_6 = ifelse(is.na(data$rep_2), NA, rep_2_6),
+         rep_2_7 = ifelse(is.na(data$rep_2), NA, rep_2_7),
+         rep_2_8 = ifelse(is.na(data$rep_2), NA, rep_2_8),
+         rep_2_9 = ifelse(is.na(data$rep_2), NA, rep_2_9))
 
 var_label(data$rep_2_1) <- "Replication failure - Outdated methods"
 var_label(data$rep_2_2) <- "Replication failure - Low quality data"
