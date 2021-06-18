@@ -1,7 +1,7 @@
 ---
 title: "OS Survey - Quant Results"
 author: "Linh Nguyen"
-date: "3/23/2021"
+date: "`r Sys.Date()`"
 output: 
   html_document:
     toc: true
@@ -18,12 +18,18 @@ options(digits = 2)
 ```
 
 ```{r, message=FALSE, warning=FALSE, results = "hold"}
-require(tidyverse)
 require(rio)
 require(summarytools)
 require(likert)
 require(xtable)
 require(knitr)
+require(grid)
+require(gridExtra)
+require(sjPlot)
+require(multcomp)
+require(tidyverse)
+require(viridis)
+require(hrbrthemes)
 sessionInfo()
 ```
 
@@ -122,7 +128,6 @@ There are `r nrow(data)` participants in total, `r length(full)` of whom have co
 
 # III. Demographics
 
-### In entire dataset
 ```{r}
 freq(data$age)
 freq(data$gender_f)
@@ -135,21 +140,6 @@ descr(descr, stats = "common", order = "p")
 rm(descr)
 ```
 
-### In complete dataset
-```{r}
-data %>% filter(id %in% full) %>% 
-  freq(age)
-data %>% filter(id %in% full) %>% 
-  freq(gender_f)
-data %>% filter(id %in% full) %>% 
-  freq(race_f)
-data %>% filter(id %in% full) %>% 
-  freq(continent)
-data %>% filter(id %in% full) %>% 
-  freq(career)
-```
-
-
 # IV. Exploratory analyses
 
 ## 1. Questionable research practices
@@ -158,93 +148,207 @@ data %>% filter(id %in% full) %>%
  
 Have you engaged in these practices?
 
-```{r, results="hold"}
+```{r, results="hold", fig.width = 10}
 qrpself <- data.frame(var = dict %>% filter(scale == "Self QRP") %>% pull(variable),
                       labels = dict %>% filter(scale == "Self QRP") %>% pull(label))
 likert <- data %>% select(all_of(qrpself$var))
 colnames(likert) <- qrpself$labels
 likert(likert)
+plot(likert(likert[,1:10]))
 ```
 
 #### Grouped by gender
 
-```{r}
+```{r, fig.height = 10}
 likert$gender_f <- data$gender_f
 likertf <- likert %>% filter(is.na(gender_f) == F)
-plot(likert(likertf[,1:5], grouping = likertf$gender_f))
-plot(likert(likertf[,6:10], grouping = likertf$gender_f))
+
+plot(likert(likertf[,1:10], grouping = likertf$gender_f))
 ```
+
+```{r}
+data <- data %>% 
+  mutate(gender = ifelse(gender_f == "Female", 0, ifelse(gender_f == "Male", 1, NA)))
+tab_model(lm(selfQRP ~ gender, data))
+```
+
+Overall, there does not seem to be a strong gender difference in engagement in questionable research practices. From the graphs of individual practices, we can see that female researchers reported more rounding of p-values whereas male researchers more often did not report problems of the studies. 
 
 #### Grouped by age
 
-```{r}
+```{r, results = "hold", fig.height = 15}
 likert$age <- data$age
 likerta <- likert %>% filter(is.na(age) == F)
-plot(likert(likerta[,1:2], grouping = likerta$age))
-plot(likert(likerta[,3:4], grouping = likerta$age))
-plot(likert(likerta[,5:6], grouping = likerta$age))
-plot(likert(likerta[,7:8], grouping = likerta$age))
-plot(likert(likerta[,9:10], grouping = likerta$age))
+plot(likert(likerta[,1:10], grouping = likerta$age))
 ```
+
+```{r}
+tab_model(lm(selfQRP ~ as.numeric(age), data))
+```
+
+Overall, there is no age difference in engagement in questionable research practices. Although it seems that the 70+ group has slightly different patterns compared to the rest, there are only 5 individuals in this age group.
 
 #### Grouped by career stage
 
-```{r}
+```{r, fig.height = 15}
 likert$career <- data$career
 likertc <- likert %>% filter(is.na(career) == F)
-plot(likert(likertc[,1:2], grouping = likertc$career))
-plot(likert(likertc[,3:4], grouping = likertc$career))
-plot(likert(likertc[,5:6], grouping = likertc$career))
-plot(likert(likertc[,7:8], grouping = likertc$career))
-plot(likert(likertc[,9:10], grouping = likertc$career))
+plot(likert(likertc[,1:10], grouping = likertc$career))
 ```
+
+```{r}
+data$careernum <- as.factor(as.numeric(data$career))
+plot(glht(aov(selfQRP ~ careernum, data), linfct = mcp(careernum = "Tukey"), 
+          alternative = "two.sided"),
+     main = "Career stage")
+```
+Career stages:
+
+- 2: Graduate student (N = 26)
+- 3: Post-doctoral fellow (N = 20)
+- 4: Assistant professor/lecturer (N = 76)
+- 5: Associate/full professor (N = 120)
+- 6: Research scientist (N = 7)
+- 7: Other (N = 12)
+
+Overall, there doesn't seem to be strong differences between different career stages in engagement in questionable research practices. Although it appears that research scientists and "other" career groups show a different pattern, it's important to note that there were only 19 participants (7.3%) that identified with these two groups. Graduate students reported less QRP engagement than assistant professors/lecturers and associate/full professors. Nonetheless, there were only 26 graduate students and many more professors/lecturers (`r 76+120`)
 
 #### Grouped by leadership position
 
-```{r}
+```{r, fig.height = 10}
+likert <- likert %>% 
+  mutate(lead_1 = data$lead_1,
+         lead_2 = data$lead_2,
+         lead_3 = data$lead_3)
+
+likertl4 <- likert %>% filter(is.na(lead_1) == F &
+                                is.na(lead_2) == F &
+                                is.na(lead_3) == F)
+
+likertl4 <- likertl4 %>%
+  mutate(lead_any = ifelse(lead_1 == 0 & lead_2 == 0 & lead_3 == 0,
+                           0, 1))
+
+likertl4$lead_any <- factor(likertl4$lead_any, levels = c(0,1), labels = c("No leadership position",
+                                                                           "Some leadership positions"))
+plot(likert(likertl4[,1:10], grouping = likertl4$lead_any))
+
 likert$lead_1 <- factor(data$lead_1, levels = c(0,1), labels = c("Not leader at own institution", "Leader at own institution"))
 likertl1 <- likert %>% filter(is.na(lead_1) == F)
-plot(likert(likertl1[,1:5], grouping = likertl1$lead_1))
-plot(likert(likertl1[,6:10], grouping = likertl1$lead_1))
+plot(likert(likertl1[,1:10], grouping = likertl1$lead_1))
 
 likert$lead_2 <- factor(data$lead_2, levels = c(0,1), labels = c("Not leader at journal editorialship", "Leader at journal editorialship"))
 likertl2 <- likert %>% filter(is.na(lead_2) == F)
-plot(likert(likertl2[,1:5], grouping = likertl2$lead_2))
-plot(likert(likertl2[,6:10], grouping = likertl2$lead_2))
+plot(likert(likertl2[,1:10], grouping = likertl2$lead_2))
 
 likert$lead_3 <- factor(data$lead_3, levels = c(0,1), labels = c("Not leader at professional societies", "Leader at professional societies"))
 likertl3 <- likert %>% filter(is.na(lead_3) == F)
-plot(likert(likertl3[,1:5], grouping = likertl3$lead_3))
-plot(likert(likertl3[,6:10], grouping = likertl3$lead_3))
+plot(likert(likertl3[,1:10], grouping = likertl3$lead_3))
 ```
+
+Leadership positions: 
+
+- Some leadership positions (N = `r count(likertl4[which(likertl4$lead_any == 'Some leadership positions'),])[[1]]`) vs. No leadership position (N = `r count(likertl4[which(likertl4$lead_any == 'No leadership position'),])[[1]]`)
+- Leader at own institution (N = `r count(likert[which(likert$lead_1 == 'Leader at own institution'),])[[1]]`) vs. Not leader at own institution (N = `r count(likert[which(likert$lead_1 == 'Not leader at own institution'),])[[1]]`)
+- Leader at journal editorialship (N = `r count(likert[which(likert$lead_2 == 'Leader at journal editorialship'),])[[1]]`) vs. Not leader at journal editorialship (N = `r count(likert[which(likert$lead_2 == 'Not leader at journal editorialship'),])[[1]]`)
+- Leader at professional societies (N = `r count(likert[which(likert$lead_3 == 'Leader at professional societies'),])[[1]]`) vs. Not leader at professional societies (N = `r count(likert[which(likert$lead_3 == 'Not leader at professional societies'),])[[1]]`)
+
+Overall there is no clear difference between researchers with and without recent leadership positions in their QRP engagement.
 
 #### Grouped by identification with subfield of cultural/ethnic minority psychology
 
-```{r}
+```{r, fig.height = 10}
 likert$culture <- data$culture
 likertce <- likert %>% filter(is.na(culture) == F)
-plot(likert(likertce[,1:5], grouping = likertce$culture))
-plot(likert(likertce[,6:10], grouping = likertce$culture))
+plot(likert(likertce[,1:10], grouping = likertce$culture))
 ```
-
 
 ### 1b. Other
 
 Percentage of researchers in ethnic minority/cultural psychology who you believe have engaged in these practices?
 
-```{r}
+```{r, fig.height = 12, fig.width = 10, warning = F}
 qrppeer <- data.frame(var = dict %>% filter(scale == "Peer QRP") %>% pull(variable),
                       labels = dict %>% filter(scale == "Peer QRP") %>% pull(label))
 descr <- data %>% select(all_of(qrppeer$var))
 colnames(descr) <- qrppeer$labels
 descr(descr, stats = "common", order = "p")
+
+# plot
+descr$id <- as.character(1:nrow(descr))
+descr <- gather(descr, key = "qrp", value = "percent",
+                "Not reporting nonsignificance":"Imputing data")
+p <- descr %>%
+  ggplot( aes(x=qrp, y=percent, fill=qrp, color=qrp)) +
+    geom_violin(width=1.25, size=0.2) +
+    geom_boxplot(width = .15, fill = "white", color = "black") +
+    stat_summary(fun.y=mean, geom="label", aes(label=round(..y.., 2), color = "black", size = 13, fill = "white")) +
+    scale_fill_viridis(discrete=TRUE) +
+    scale_color_viridis(discrete=TRUE) +
+    theme_minimal() +
+    theme(
+      legend.position="none",
+      axis.text.y = element_text(size = 12)
+    ) +
+    coord_flip() + #horizontal version
+    xlab("") +
+    ylab("Percentage of researchers in ethnic minority/cultural psychology you believe have engaged in this")
+print(p)
 ```
+
+```{r, fig.height = 8, fig.width = 10}
+#lollipop plot comparing with self engagement
+descr <- data.frame(self = c(100-33, 100-56, 100-57, 100-43, 100-63, 100-74, 100-80, 100-42, 100-81, 100-93),
+                    other = c(58.08, 48.52, 45.64, 52.29, 45.56, 35.53, 35.11, 49.73, 33.55, 20.48),
+                    qrp = c("Not reporting nonsignificance", "Not reporting nonsignificance (covariate)",
+                            "HARKing", "Not reporting alternative models", "Rounding p-value", 
+                            "Excluding data", "Increasing sample", "Changing analysis",
+                            "Not reporting problems", "Imputing data"))
+
+descr <- descr %>% arrange(self) %>% 
+  mutate(qrp = factor(qrp, qrp)) #factor is needed to preserve order
+
+p <- ggplot(descr) +
+  geom_segment(
+    aes(x=qrp, xend=qrp, y=self, yend=other), 
+    color= ifelse(descr$self < descr$other, "grey", "orange"), 
+    size= ifelse(descr$self < descr$other, 1, 2)) +
+  geom_point(
+    aes(x=qrp, y=self),
+    color="green", 
+    size=4) +
+  geom_point(
+    aes(x=qrp, y=other),
+    color="red", 
+    size=4,
+    shape=17) +
+  theme_minimal() +
+  coord_flip() +
+  theme(
+    axis.text.y = element_text(size = 12),
+    axis.text.x = element_text(size = 12)
+    ) +
+  ylim(0, 80) +
+  xlab("") +
+  ylab("Percentage of researchers in ethnic minority/cultural psychology you believe have engaged in this")
+
+p <- p + 
+  annotate("text", x=grep("Changing analysis", descr$qrp), 20, 
+           label="Underestimation of \n others' engagement", 
+           color="orange", size=5 , angle=0, fontface="bold", hjust=0) +
+  annotate("text", x=grep("Excluding data", descr$qrp), 50, 
+           label="Overestimation of \n others' engagement", 
+           color="gray", size=5 , angle=0, fontface="bold", hjust=0)
+
+print(p)
+```
+
 
 ### 1c. Opinion
 
 What is your opinion of these practices?
 
-```{r}
+```{r, results="hold"}
 qrpopi <- data.frame(var = dict %>% filter(scale == "Opinion QRP") %>% pull(variable),
                       labels = dict %>% filter(scale == "Opinion QRP") %>% pull(label))
 likert <- data %>% select(all_of(qrpopi$var))
@@ -606,7 +710,7 @@ colnames(descr) <-  c("Proprietary",
 descr(descr, stats = "common", order = "p") %>% kable()
 ```
 
-### For not preregistering
+#### For not preregistering
 
 ```{r}
 whyprereg <- grep("^prrp3_5_", names(data), value = T)[-1]
